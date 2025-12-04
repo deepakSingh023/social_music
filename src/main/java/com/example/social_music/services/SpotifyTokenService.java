@@ -1,6 +1,7 @@
 package com.example.social_music.services;
 
 import com.example.social_music.dto.spotify.SpotifyTokenResponse;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +28,11 @@ public class SpotifyTokenService {
 
     public SpotifyTokenService(WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder.build();
-        refreshToken(); // refresh token at startup
+    }
+
+    @PostConstruct
+    public void init() {
+        refreshToken();
     }
 
     public synchronized void refreshToken() {
