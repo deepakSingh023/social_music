@@ -6,9 +6,10 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
+import java.util.Base64;
 
 @Service
 @Getter
@@ -24,11 +25,7 @@ public class SpotifyTokenService {
     private String token;
     private Instant expiryTime;
 
-    private final WebClient webClient;
-
-    public SpotifyTokenService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.build();
-    }
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @PostConstruct
     public void init() {
@@ -36,21 +33,27 @@ public class SpotifyTokenService {
     }
 
     public synchronized void refreshToken() {
+
         String auth = clientId + ":" + clientSecret;
-        String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
+        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
 
-        var response = webClient.post()
-                .uri("https://accounts.spotify.com/api/token")
-                .header("Authorization", "Basic " + encodedAuth)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .bodyValue("grant_type=client_credentials")
-                .retrieve()
-                .bodyToMono(SpotifyTokenResponse.class)
-                .block();
+        var headers = new org.springframework.http.HttpHeaders();
+        headers.set("Authorization", "Basic " + encodedAuth);
+        headers.set("Content-Type", "application/x-www-form-urlencoded");
 
-        if (response != null) {
-            this.token = response.getAccess_token();
-            this.expiryTime = Instant.now().plusSeconds(response.getExpires_in());
+        var entity = new org.springframework.http.HttpEntity<>("grant_type=client_credentials", headers);
+
+        var response = restTemplate.postForEntity(
+                "https://accounts.spotify.com/api/token",
+                entity,
+                SpotifyTokenResponse.class
+        );
+
+        var body = response.getBody();
+
+        if (body != null) {
+            this.token = body.getAccess_token();
+            this.expiryTime = Instant.now().plusSeconds(body.getExpires_in());
             System.out.println("Spotify token refreshed at " + Instant.now());
         }
     }

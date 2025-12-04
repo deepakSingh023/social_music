@@ -6,8 +6,7 @@ import com.example.social_music.dto.spotify.SpotifyApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,36 +18,37 @@ public class SearchServiceImpl implements SearchService {
     @Value("${spotify.api.base-url}")
     private String baseUrl;
 
-    private final WebClient.Builder webClientBuilder;
     private final SpotifyTokenService spotifyTokenService;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Override
     public SongSearchResponse searchSongs(String query, int page, int pageSize) {
+
         int offset = (page - 1) * pageSize;
 
-        // Refresh token if expired
         if (spotifyTokenService.isTokenExpired()) {
             spotifyTokenService.refreshToken();
         }
 
         String token = spotifyTokenService.getToken();
 
-        Mono<SpotifyApiResponse> responseMono = webClientBuilder.build()
-                .get()
-                .uri(uriBuilder -> uriBuilder
-                        .scheme("https")
-                        .host(baseUrl)
-                        .path("/v1/search")
-                        .queryParam("q", query)
-                        .queryParam("type", "track")
-                        .queryParam("limit", pageSize)
-                        .queryParam("offset", offset)
-                        .build())
-                .header("Authorization", "Bearer " + token)
-                .retrieve()
-                .bodyToMono(SpotifyApiResponse.class);
+        String url = "https://" + baseUrl + "/v1/search?q=" + query +
+                "&type=track&limit=" + pageSize + "&offset=" + offset;
 
-        SpotifyApiResponse apiResponse = responseMono.block();
+        var headers = new org.springframework.http.HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+
+        var entity = new org.springframework.http.HttpEntity<>(headers);
+
+        var response = restTemplate.exchange(
+                url,
+                org.springframework.http.HttpMethod.GET,
+                entity,
+                SpotifyApiResponse.class
+        );
+
+        SpotifyApiResponse apiResponse = response.getBody();
 
         List<SongDto> songs = apiResponse.getTracks().getItems().stream()
                 .map(track -> new SongDto(
@@ -60,6 +60,11 @@ public class SearchServiceImpl implements SearchService {
                 ))
                 .collect(Collectors.toList());
 
-        return new SongSearchResponse(songs, page, pageSize, apiResponse.getTracks().getTotal());
+        return new SongSearchResponse(
+                songs,
+                page,
+                pageSize,
+                apiResponse.getTracks().getTotal()
+        );
     }
 }
