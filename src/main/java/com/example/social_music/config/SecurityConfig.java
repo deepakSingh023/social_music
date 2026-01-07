@@ -24,9 +24,13 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                "/api/health",
+                                "/api/spotify/search"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 );
+
 
         return http.build();
     }

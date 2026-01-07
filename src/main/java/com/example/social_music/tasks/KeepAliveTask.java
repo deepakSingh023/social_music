@@ -7,16 +7,16 @@ import org.springframework.web.client.RestTemplate;
 @Component
 public class KeepAliveTask {
 
-    private static final String PING_URL = "https://social-music.onrender.com";
+    private static final String PING_URL =
+            "https://social-music.onrender.com/api/health";
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    // Run every 5 minutes
-    @Scheduled(fixedRate = 300000) // 300,000 ms = 5 min
+    @Scheduled(fixedRate = 300000) // 5 minutes
     public void pingSelf() {
         try {
             restTemplate.getForObject(PING_URL, String.class);
-            System.out.println("Keep-alive ping sent to " + PING_URL);
+            System.out.println("Keep-alive ping successful");
         } catch (Exception e) {
             System.err.println("Keep-alive ping failed: " + e.getMessage());
         }
