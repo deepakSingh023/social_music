@@ -1,5 +1,6 @@
 package com.example.social_music.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,5 +13,7 @@ public class SongDto {
     private String name;
     private String artist;
     private String albumArtUrl;
-    private String previewUrl; // 30s preview from Spotify
+
+    @JsonProperty("previewUrl")  // This will serialize to camelCase for frontend
+    private String preview_url;   // But use snake_case internally to match Spotify
 }
