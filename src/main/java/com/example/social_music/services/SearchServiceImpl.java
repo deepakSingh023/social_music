@@ -22,6 +22,8 @@ public class SearchServiceImpl implements SearchService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
+    // In SearchServiceImpl.java - UPDATE THIS:
+
     @Override
     public SongSearchResponse searchSongs(String query, int page, int pageSize) {
 
@@ -33,8 +35,9 @@ public class SearchServiceImpl implements SearchService {
 
         String token = spotifyTokenService.getToken();
 
+        // ADD &market=US to increase preview availability
         String url = "https://" + baseUrl + "/v1/search?q=" + query +
-                "&type=track&limit=" + pageSize + "&offset=" + offset;
+                "&type=track&limit=" + pageSize + "&offset=" + offset + "&market=US";
 
         var headers = new org.springframework.http.HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
