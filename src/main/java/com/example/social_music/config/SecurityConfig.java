@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/health",
-                                "/api/spotify/search"
+                                "/api/music/search"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
